@@ -165,6 +165,9 @@
     function save(id, el){
       el.innerText = '✓ saved';
     }
+    function del(id){
+  db.collection("posts").doc(id).delete();
+}
   </script>
 
 </body>
