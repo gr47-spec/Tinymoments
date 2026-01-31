@@ -1,1 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Tiny Moments</title>
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Script&family=Quicksand&display=swap" rel="stylesheet">
+  <style>
+    body{
+      background:#f7c6d9;
+      text-align:center;
+      padding-top:60px;
+      font-family:Quicksand,sans-serif;
+      color:#5a2f3f;
+    }
+    h1{
+      font-family:'Playfair Script', cursive;
+      font-size:2.6rem;
+      margin:0;
+    }
+    .sub{
+      font-size:13px;
+      margin-bottom:25px;
+      color:#8f5a6b;
+    }
+    textarea{
+      width:300px;
+      height:90px;
+      border:none;
+      border-radius:22px;
+      padding:16px;
+      font-family:Quicksand,sans-serif;
+      font-size:14px;
+      outline:none;
+      background:linear-gradient(#fff7fa,#ffe2ec);
+      box-shadow:0 2px 6px rgba(0,0,0,0.08);
+      transition: all 0.25s ease;
+    }
+    textarea:focus{
+      box-shadow:0 0 0 3px #ffd6e6;
+    }
+    button{
+      margin-top:10px;
+      padding:8px 22px;
+      border:none;
+      border-radius:999px;
+      background:#fff;
+      font-family:'Playfair Script', cursive;
+      cursor:pointer;
+      transition: 0.2s;
+    }
+    button:hover{
+      transform: translateY(-2px);
+      box-shadow:0 6px 12px rgba(0,0,0,0.1);
+    }
+    .post{
+      background:#fff;
+      width:300px;
+      margin:15px auto;
+      padding:14px;
+      border-radius:18px;
+      text-align:left;
+    }
+    .actions span.like{
+      font-size:16px;
+      color:#ff4d6d;
+      margin-right:15px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .actions span.save-btn{
+      font-size:14px;
+      color:#5a2f3f;
+      background:#ffe8f0;
+      padding:4px 10px;
+      border-radius:15px;
+      cursor:pointer;
+      user-select:none;
+    }
+  </style>
+</head>
+<body>
 
+  <h1>Tiny Moments</h1>
+  <div class="sub">share your feelings</div>
+
+  <textarea id="t" placeholder="write something"></textarea><br>
+  <button onclick="add()">share</button>
+
+  <div id="list"></div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    // 🔽 Paste YOUR firebaseConfig here
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const list = document.getElementById('list');
+    const t = document.getElementById('t');
+
+    // Load posts in real-time
+    db.collection("posts").orderBy("timestamp", "desc").onSnapshot(snapshot => {
+      list.innerHTML = '';
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const postDiv = document.createElement('div');
+        postDiv.className = 'post';
+        postDiv.innerHTML = `
+          <div>${data.text}</div>
+          <div class="actions">
+            <span class="like" onclick="like('${doc.id}', this)">♡ ${data.likes || 0}</span>
+            <span class="save-btn" onclick="save('${doc.id}', this)">🔖 save</span>
+          </div>
+        `;
+        list.appendChild(postDiv);
+      });
+    });
+
+    // Add a post
+    function add(){
+      if(t.value.trim() === '') return;
+      db.collection("posts").add({
+        text: t.value,
+        likes: 0,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      t.value = '';
+    }
+
+    // Like a post
+    function like(id, el){
+      const docRef = db.collection("posts").doc(id);
+      db.runTransaction(transaction => {
+        return transaction.get(docRef).then(doc => {
+          if(!doc.exists) return;
+          let newLikes = (doc.data().likes || 0) + 1;
+          transaction.update(docRef, { likes: newLikes });
+        });
+      });
+    }
+
+    // Save post (UI only for now)
+    function save(id, el){
+      el.innerText = '✓ saved';
+    }
+  </script>
+
+</body>
+</html>
