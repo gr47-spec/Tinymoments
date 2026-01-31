@@ -121,6 +121,7 @@
           <div class="actions">
             <span class="like" onclick="like('${doc.id}', this)">♡ ${data.likes || 0}</span>
             <span class="save-btn" onclick="save('${doc.id}', this)">🔖 save</span>
+             <span class="delete-btn" onclick="del('${doc.id}')">🗑 delete</span>
           </div>
         `;
         list.appendChild(postDiv);
