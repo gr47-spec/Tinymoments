@@ -1,174 +1,175 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-<meta charset="UTF-8">
-<title>Tiny Moments</title>
-
-<style>
-
-body{
-font-family:Arial;
-background:#0f0f0f;
-color:white;
-text-align:center;
-padding:40px;
-}
-
-h1{
-margin-bottom:20px;
-}
-
-input{
-padding:10px;
-width:260px;
-border-radius:6px;
-border:none;
-}
-
-button{
-padding:10px;
-margin-left:5px;
-border:none;
-border-radius:6px;
-cursor:pointer;
-}
-
-.post{
-background:#1e1e1e;
-padding:12px;
-margin:10px auto;
-width:300px;
-border-radius:10px;
-}
-
-.actions{
-margin-top:8px;
-font-size:14px;
-}
-
-.actions span{
-margin-right:10px;
-cursor:pointer;
-}
-
-</style>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tiny Moments</title>
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Script&family=Quicksand&display=swap" rel="stylesheet">
+  <style>
+    body{
+      background:#f7c6d9;
+      text-align:center;
+      padding-top:60px;
+      font-family:Quicksand,sans-serif;
+      color:#5a2f3f;
+    }
+    h1{
+      font-family:'Playfair Script', cursive;
+      font-size:2.6rem;
+      margin:0;
+    }
+    .sub{
+      font-size:13px;
+      margin-bottom:25px;
+      color:#8f5a6b;
+    }
+    textarea{
+      width:90%;
+      max-width:420px;
+      height:90px;
+      border:none;
+      border-radius:22px;
+      padding:16px;
+      font-family:Quicksand,sans-serif;
+      font-size:14px;
+      outline:none;
+      background:linear-gradient(#fff7fa,#ffe2ec);
+      box-shadow:0 2px 6px rgba(0,0,0,0.08);
+      transition: all 0.25s ease;
+    }
+    textarea:focus{
+      box-shadow:0 0 0 3px #ffd6e6;
+    }
+    button{
+      margin-top:10px;
+      padding:8px 22px;
+      border:none;
+      border-radius:999px;
+      background:#fff;
+      font-family:'Playfair Script', cursive;
+      cursor:pointer;
+      transition: 0.2s;
+    }
+    button:hover{
+      transform: translateY(-2px);
+      box-shadow:0 6px 12px rgba(0,0,0,0.1);
+    }
+    .post{
+      background:#fff;
+      width:300px;
+      margin:15px auto;
+      padding:14px;
+      border-radius:18px;
+      text-align:left;
+    }
+    .actions span.like{
+      font-size:16px;
+      color:#ff4d6d;
+      margin-right:15px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .actions span.save-btn{
+      font-size:14px;
+      color:#5a2f3f;
+      background:#ffe8f0;
+      padding:4px 10px;
+      border-radius:15px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .actions span.delete-btn{
+  font-size:14px;
+  color:#5a2f3f;
+  background:#ffe8f0;
+  padding:4px 10px;
+  border-radius:15px;
+  cursor:pointer;
+  user-select:none;
+  margin-left:6px;
+    }
+  </style>
 </head>
-
 <body>
 
-<h1>Tiny Moments</h1>
+  <h1>Tiny Moments</h1>
+  <div class="sub">share your feelings</div>
 
-<input id="postInput" placeholder="Write something">
-<button id="postBtn">Post</button>
+  <textarea id="t" placeholder="write something"></textarea><br>
+  <button onclick="add()">share</button>
 
-<div id="posts"></div>
+  <div id="list"></div>
 
-<script type="module">
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-
-import {
-getFirestore,
-collection,
-addDoc,
-onSnapshot,
-doc,
-updateDoc,
-deleteDoc,
-increment,
-query,
-orderBy
-}
-from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
-const firebaseConfig = {
-  apiKey: "AIzaSyAeTxavZ6z0LmvCfO8Uo768QU2QeJ4FbOw",
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAeTxavZ6z0LmvCfO8Uo768QU2QeJ4FbOw",
   authDomain: "tiny-moments-52fc9.firebaseapp.com",
   projectId: "tiny-moments-52fc9",
   storageBucket: "tiny-moments-52fc9.firebasestorage.app",
   messagingSenderId: "23616553927",
   appId: "1:23616553927:web:4731ae0a51b84058d68fe2"
-};
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+    };
 
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-const input = document.getElementById("postInput");
-const btn = document.getElementById("postBtn");
-const postsDiv = document.getElementById("posts");
+    const list = document.getElementById('list');
+    const t = document.getElementById('t');
 
+    // Load posts in real-time
+    db.collection("posts").orderBy("timestamp", "desc").onSnapshot(snapshot => {
+      list.innerHTML = '';
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const postDiv = document.createElement('div');
+        postDiv.className = 'post';
+        postDiv.innerHTML = `
+          <div>${data.text}</div>
+          <div class="actions">
+            <span class="like" onclick="like('${doc.id}', this)">♡ ${data.likes || 0}</span>
+            <span class="save-btn" onclick="save('${doc.id}', this)">🔖 save</span>
+             <span class="delete-btn" onclick="del('${doc.id}')">🗑 delete</span>
+          </div>
+        `;
+        list.appendChild(postDiv);
+      });
+    });
 
-btn.onclick = async () => {
+    // Add a post
+    function add(){
+      if(t.value.trim() === '') return;
+      db.collection("posts").add({
+        text: t.value,
+        likes: 0,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      t.value = '';
+    }
 
-const text = input.value;
+    // Like a post
+    function like(id, el){
+      const docRef = db.collection("posts").doc(id);
+      db.runTransaction(transaction => {
+        return transaction.get(docRef).then(doc => {
+          if(!doc.exists) return;
+          let newLikes = (doc.data().likes || 0) + 1;
+          transaction.update(docRef, { likes: newLikes });
+        });
+      });
+    }
 
-if(!text) return;
-
-await addDoc(collection(db,"posts"),{
-text:text,
-likes:0,
-time:Date.now()
-});
-
-input.value="";
-
-};
-
-
-const q = query(collection(db,"posts"), orderBy("time","desc"));
-
-onSnapshot(q,(snapshot)=>{
-
-postsDiv.innerHTML="";
-
-snapshot.forEach((docSnap)=>{
-
-const data = docSnap.data();
-const id = docSnap.id;
-
-const div=document.createElement("div");
-div.className="post";
-
-div.innerHTML = `
-<div>${data.text}</div>
-
-<div class="actions">
-
-<span onclick="likePost('${id}')">❤️ ${data.likes || 0}</span>
-
-<span onclick="deletePost('${id}')">🗑 delete</span>
-
-</div>
-`;
-
-postsDiv.appendChild(div);
-
-});
-
-});
-
-
-window.likePost = async (id)=>{
-
-const ref = doc(db,"posts",id);
-
-await updateDoc(ref,{
-likes: increment(1)
-});
-
-};
-
-
-window.deletePost = async (id)=>{
-
-const ref = doc(db,"posts",id);
-
-await deleteDoc(ref);
-
-};
-
-</script>
+    // Save post (UI only for now)
+    function save(id, el){
+      el.innerText = '✓ saved';
+    }
+    function del(id){
+  db.collection("posts").doc(id).delete();
+}
+  </script>
 
 </body>
 </html>
