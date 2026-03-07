@@ -102,42 +102,58 @@
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyAeTxavZ6z0LmvCfO8Uo768QU2QeJ4FbOw",
-  authDomain: "tiny-moments-52fc9.firebaseapp.com",
-  projectId: "tiny-moments-52fc9",
-  storageBucket: "tiny-moments-52fc9.firebasestorage.app",
-  messagingSenderId: "23616553927",
-  appId: "1:23616553927:web:4731ae0a51b84058d68fe2"
-    };
+  apiKey: "AIzaSyDMMBmpMRE9PZOMJOelMzLcEX2jvZVutV0",
+  authDomain: "tiny-moments-52fc9.firebaseapp.com",
+  projectId: "tiny-moments-52fc9",
+  storageBucket: "tiny-moments-52fc9.firebasestorage.app",
+  messagingSenderId: "23616553927",
+  appId: "1:23616553927:web:0d564bd059c3c357d68fe2"
+};
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
     const list = document.getElementById('list');
     const t = document.getElementById('t');
+    function add(){
+  const text = document.getElementById("t").value;
+  if(text.trim()==="") return;
 
-    // Load posts in real-time
-    db.collection("posts").orderBy("timestamp", "desc").onSnapshot(snapshot => {
-      list.innerHTML = '';
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const postDiv = document.createElement('div');
-        postDiv.className = 'post';
-        postDiv.innerHTML = `
-          <div>${data.text}</div>
-          <div class="actions">
-            <span class="like" onclick="like('${doc.id}', this)">♡ ${data.likes || 0}</span>
-            <span class="save-btn" onclick="save('${doc.id}', this)">🔖 save</span>
-             <span class="delete-btn" onclick="del('${doc.id}')">🗑 delete</span>
-          </div>
-        `;
-        list.appendChild(postDiv);
-      });
-    });
+  db.collection("posts").add({
+    text:text
+  });
+
+  document.getElementById("t").value="";
+}
+db.collection("posts").onSnapshot(snapshot => {
+
+  list.innerHTML = '';
+
+  snapshot.forEach(doc => {
+
+    const data = doc.data();
+
+    const postDiv = document.createElement('div');
+    postDiv.className = 'post';
+
+    postDiv.innerHTML = `
+      <div>${data.text}</div>
+
+      <div class="actions">
+        <span class="like" onclick="like('${doc.id}', this)">♡ ${data.likes || 0}</span>
+        <span class="save-btn" onclick="save('${doc.id}', this)">🔖 save</span>
+        <span class="delete-btn" onclick="del('${doc.id}')">🗑 delete</span>
+      </div>
+    `;
+
+    list.appendChild(postDiv);
+
+  });
+
+});
 
     // Add a post
     function add(){
